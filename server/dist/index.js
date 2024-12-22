@@ -25,13 +25,12 @@ app.get('/', (req, res) => {
         thing: true
     });
 });
-// CREATE A WORKSPACE
-app.post('/new', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+// CREATE A WORKSPACE(params : name)
+app.post('/workspaces/new', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { name } = req.body;
     // invalid data
     if (!name)
         res.status(400);
-    console.log(name, "here it is");
     try {
         yield prisma.workspace.create({
             data: {
@@ -43,19 +42,67 @@ app.post('/new', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         });
     }
     catch (error) {
-        console.log(error);
+        // console.log(error);
         res.status(400).json({
             success: false
         });
     }
 }));
 // GET ALL WORKSPACES
-app.get('/getall', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+app.get('/workspaces/getall', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const workspaces = yield prisma.workspace.findMany();
     res.json({
         workspaces
     });
 }));
+// CREATE A TODO IN A WORKSPACE(params: wid + payload)
+app.post('/todo/new', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { wid, name, startDate, endDate, status } = req.body;
+    try {
+        yield prisma.todo.create({
+            data: {
+                wid,
+                name,
+                startDate,
+                endDate,
+                status,
+            }
+        });
+        res.json({
+            success: true
+        });
+    }
+    catch (error) {
+        res.status(400).json({
+            success: false
+        });
+    }
+}));
+// GET ALL TODOS FOR A SPECIFIC WORKSPACE
+app.get('/todos', (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { id } = req.headers;
+    if (!id) {
+        res.status(400).send('bad request');
+    }
+    try {
+        const data = yield prisma.workspace.findFirst({
+            where: {
+                id: Number(id)
+            },
+            select: {
+                todos: true
+            }
+        });
+        res.json({
+            todos: data === null || data === void 0 ? void 0 : data.todos
+        });
+    }
+    catch (error) {
+        res.status(400).json({
+            success: false
+        });
+    }
+}));
 app.listen(PORT, () => {
-    console.log(`listening to PORT ${PORT}\nhttp://localhost:8080`);
+    console.log(`listening at:\nhttp://localhost:${PORT}`);
 });
